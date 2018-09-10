@@ -12,6 +12,7 @@ class Machine(_Machine):
     transitions_path = {}
     trigger_cache = {}
     state_lock = False
+    trigger_params = {}
 
     def __init__(self, transitions, **kwargs):
         self.sm_transitions = transitions
@@ -31,9 +32,14 @@ class Machine(_Machine):
         super(Machine, self).__init__(transitions=_transitions, **kwargs)
         self.find_all_path()
 
-    def change_state_to(self, to):
+    async def change_state_to(self, to):
         if not self.state_lock:
             self.state_to = to
+        else:
+            raise Exception("state lock exists.")
+        while self.state != to:
+            await asyncio.sleep(1)
+
 
     def get_trigger(self, source, dest):
         return self.trigger_cache['{}2{}'.format(source, dest)]
@@ -79,7 +85,11 @@ class Machine(_Machine):
                     continue
                 self.state_lock = True
                 for fun in self.path(self.state, self.state_to):
-                    r = fun()
+                    r = None
+                    if fun in self.trigger_params and self.trigger_params.get(fun, None):
+                        r = fun(**self.trigger_params.get(fun))
+                    else:
+                        r = fun()
                     if r:  # set new state
                         getattr(self, fun.__name__).__call__()
                         self.state_lock = False

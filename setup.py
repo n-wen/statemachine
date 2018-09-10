@@ -8,7 +8,7 @@ requirements = ['transitions==0.6.8']
 
 setup(
     name="statemachine",
-    version="0.0.1",
+    version="0.0.2",
     url='https://github.com/htwenning/statemachine',
     license='BSD',
     author='wenning',
