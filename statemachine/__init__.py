@@ -13,6 +13,7 @@ class Machine(_Machine):
     trigger_cache = {}
     state_lock = False
     trigger_params = {}
+    cancel_changing_state = False
 
     def __init__(self, transitions, **kwargs):
         self.sm_transitions = transitions
@@ -38,7 +39,11 @@ class Machine(_Machine):
         else:
             raise Exception("state lock exists.")
         while self.state != to:
+            if self.cancel_changing_state:
+                self.cancel_changing_state = False
+                return False
             await asyncio.sleep(1)
+        return True
 
 
     def get_trigger(self, source, dest):
@@ -92,8 +97,10 @@ class Machine(_Machine):
                         r = fun()
                     if r:  # set new state
                         getattr(self, fun.__name__).__call__()
-                        self.state_lock = False
                     else:
                         break
             except Exception as e:
                 logger.error(" error:{}".format(e))
+                self.cancel_changing_state = True
+            finally:
+                self.state_lock = False
