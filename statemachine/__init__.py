@@ -63,6 +63,8 @@ class Machine(_Machine):
             return None
 
         paths = _find_path(self.transitions_path, start, stop)
+        if paths is None:
+            return []
         ret = []
         for index, state in enumerate(paths[:-1]):
             ret.append(self.get_trigger(state, paths[index + 1]))
